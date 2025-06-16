@@ -33,19 +33,17 @@ curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json
   "name": "postgres-rds-connector",
   "config": {
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "plugin.name": "pgoutput",
     "database.hostname": "$DB_HOSTNAME",
     "database.port": "$DB_PORT",
     "database.user": "$DB_USER",
     "database.password": "$DB_PASSWORD",
     "database.dbname": "$DB_NAME",
     "database.server.name": "rds-postgres",
-    "plugin.name": "pgoutput",
-    "slot.name": "debezium_slot",
-    "publication.name": "debezium_pub",
-    "include.schema.changes": "true",
-    "snapshot.mode": "initial",
-    "table.include.list": "public.customer,public.orders",
-    "topic.prefix": "rds-postgres"
+    "topic.prefix": "rds-postgres",
+    "table.include.list": "database-table",
+    "schema.history.internal.kafka.bootstrap.servers": "kafka:9092",
+    "schema.history.internal.kafka.topic": "schema-changes.inventory"
   }
 }' || {
   echo "❌ Failed to create Postgres connector."
