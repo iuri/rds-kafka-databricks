@@ -2,7 +2,7 @@
 set -e
 
 # Source the .env file
-source ../.env
+source /kafka/connect/.env
 echo "Waiting for Kafka Connect to be ready..."
 
 MAX_RETRIES=10
