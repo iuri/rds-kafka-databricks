@@ -1,0 +1,5 @@
+Faker
+faker-commerce
+kafka-python
+python-dotenv
+psycopg2

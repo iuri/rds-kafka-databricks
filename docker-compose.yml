@@ -2,8 +2,13 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.8.3
     container_name: zookeeper
+    restart: always
+    volumes:
+      - zg_core_zookeeper_data:/var/lib/zookeeper/data
+      - zg_core_zookeeper_logs:/var/lib/zookeeper/log
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 2181:2181
     networks:
@@ -12,12 +17,20 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.5.9
     container_name: kafka
+    restart: always
+    volumes:
+      - zg_core_kafka_data:/var/lib/kafka/data
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_JMX_PORT: 9991
     healthcheck:
       test:
@@ -43,6 +56,7 @@ services:
       GROUP_ID: 1
       CONFIG_STORAGE_TOPIC: "connect_configs"
       OFFSET_STORAGE_TOPIC: "connect_offsets"
+      CONNECT_PLUGIN_PATH: /kafka/connect,/debezium,/connectors
     depends_on:
       kafka:
         condition: service_healthy
@@ -50,10 +64,15 @@ services:
       - 8083:8083
     networks:
       - default-network
+    volumes:
+      - ./connectors:/connectors
+      - ./entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/entrypoint.sh"]
   
   schema-registry:
     container_name: schema-registry
     image: confluentinc/cp-schema-registry:latest
+    restart: always
     environment:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
@@ -90,3 +109,12 @@ networks:
     ipam:
       config:
         - subnet: 172.16.0.0/24
+
+
+volumes:
+  zg_core_zookeeper_data:
+    driver: local
+  zg_core_zookeeper_logs:
+    driver: local
+  zg_core_kafka_data:
+    driver: local
